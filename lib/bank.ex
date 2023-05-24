@@ -70,15 +70,17 @@ defmodule Bank do
 
   @spec get_balance(user :: String.t, currency :: String.t) :: {:ok, balance :: number} | {:error, :wrong_arguments | :user_does_not_exist | :too_many_requests_to_user}
   def get_balance(user, currency) do
-    case user_exists?(user) do
-      true ->
+    case {user_exists?(user), too_many_requests?()} do
+      {_, true} ->
+        {:error, :too_many_requests_to_user}
+      {true, false} ->
         [{pid, _}] = Registry.lookup(:bank_registry, user)
 
         converted_balance = :sys.get_state(pid).balance
         |> convert_by_currency(currency)
 
         {:ok, converted_balance}
-      _ ->
+      {_, _} ->
         {:error, :user_does_not_exist}
     end
   end
@@ -129,5 +131,9 @@ defmodule Bank do
     else
       false
     end
+  end
+
+  defp too_many_requests?() do
+    Process.info(self(), :message_queue_len) <= 10
   end
 end
