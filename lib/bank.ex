@@ -43,16 +43,7 @@ defmodule Bank do
       _ -> {:error, :user_does_not_exist}
     end
   end
-
   def deposit(_, _, _), do: {:error, :wrong_arguments}
-
-  defp user_exists?(user) do
-    if Registry.lookup(:bank_registry, user) == [] do
-      false
-    else
-      true
-    end
-  end
 
   @spec withdraw(user :: String.t, amount :: number, currency :: String.t) :: {:ok, new_balance :: number} | {:error, :wrong_arguments | :user_does_not_exist | :not_enough_money | :too_many_requests_to_user}
   def withdraw(user, amount, currency) do
@@ -141,5 +132,13 @@ defmodule Bank do
 
   defp too_many_requests?() do
     Process.info(self(), :message_queue_len) <= 10
+  end
+
+  defp user_exists?(user) do
+    if Registry.lookup(:bank_registry, user) == [] do
+      false
+    else
+      true
+    end
   end
 end
