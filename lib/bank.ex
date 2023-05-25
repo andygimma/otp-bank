@@ -27,64 +27,113 @@ defmodule Bank do
     }
   end
 
-  @spec create_user(user :: String.t) :: :ok | {:error, :wrong_arguments | :user_already_exists}
+  @spec create_user(user :: String.t()) :: :ok | {:error, :wrong_arguments | :user_already_exists}
   def create_user(id) when not is_binary(id), do: {:error, :wrong_arguments}
+
   def create_user(id) do
     Bank.BankSupervisor.start_child(id)
   end
 
-  @spec deposit(user :: String.t, amount :: number, currency :: String.t) :: {:ok, new_balance :: number} | {:error, :wrong_arguments | :user_does_not_exist | :too_many_requests_to_user}
-  def deposit(user, amount, currency) when is_binary(user) and is_number(amount) and is_binary(currency) do
+  @spec deposit(user :: String.t(), amount :: number, currency :: String.t()) ::
+          {:ok, new_balance :: number}
+          | {:error, :wrong_arguments | :user_does_not_exist | :too_many_requests_to_user}
+  def deposit(user, amount, currency)
+      when is_binary(user) and is_number(amount) and is_binary(currency) and is_binary(user) do
     case {user_exists?(user), too_many_requests?()} do
       {_, true} ->
         {:error, :too_many_requests_to_user}
+
       {true, false} ->
         user |> via_tuple() |> GenServer.call({:deposit, user, amount, currency})
         [{pid, _}] = Registry.lookup(:bank_registry, user)
         {:ok, :sys.get_state(pid).balance}
-      _ -> {:error, :user_does_not_exist}
-    end
-  end
-  def deposit(_, _, _), do: {:error, :wrong_arguments}
 
-  @spec withdraw(user :: String.t, amount :: number, currency :: String.t) :: {:ok, new_balance :: number} | {:error, :wrong_arguments | :user_does_not_exist | :not_enough_money | :too_many_requests_to_user}
-  def withdraw(user, amount, currency) do
-    case {user_exists?(user), enough_in_balance?(user, amount, currency), too_many_requests?()} do
-      {_, _, true} ->
-        {:error, :too_many_requests_to_user}
-      {true, true, _} ->
-        user |> via_tuple() |> GenServer.call({:withdraw, user, amount, currency})
-        [{pid, _}] = Registry.lookup(:bank_registry, user)
-        {:ok, :sys.get_state(pid).balance}
-      {true, false, _} ->
-          {:error, :not_enough_money}
       _ ->
         {:error, :user_does_not_exist}
     end
   end
 
-  @spec get_balance(user :: String.t, currency :: String.t) :: {:ok, balance :: number} | {:error, :wrong_arguments | :user_does_not_exist | :too_many_requests_to_user}
+  def deposit(_, _, _), do: {:error, :wrong_arguments}
+
+  @spec withdraw(user :: String.t(), amount :: number, currency :: String.t()) ::
+          {:ok, new_balance :: number}
+          | {:error,
+             :wrong_arguments
+             | :user_does_not_exist
+             | :not_enough_money
+             | :too_many_requests_to_user}
+  def withdraw(user, amount, currency) do
+    case {user_exists?(user), enough_in_balance?(user, amount, currency), too_many_requests?()} do
+      {_, _, true} ->
+        {:error, :too_many_requests_to_user}
+
+      {true, true, _} ->
+        user |> via_tuple() |> GenServer.call({:withdraw, user, amount, currency})
+        [{pid, _}] = Registry.lookup(:bank_registry, user)
+        {:ok, :sys.get_state(pid).balance}
+
+      {true, false, _} ->
+        {:error, :not_enough_money}
+
+      _ ->
+        {:error, :user_does_not_exist}
+    end
+  end
+
+  @spec get_balance(user :: String.t(), currency :: String.t()) ::
+          {:ok, balance :: number}
+          | {:error, :wrong_arguments | :user_does_not_exist | :too_many_requests_to_user}
   def get_balance(user, currency) do
     case {user_exists?(user), too_many_requests?()} do
       {_, true} ->
         {:error, :too_many_requests_to_user}
+
       {true, false} ->
         [{pid, _}] = Registry.lookup(:bank_registry, user)
 
-        converted_balance = :sys.get_state(pid).balance
-        |> convert_by_currency(currency)
+        converted_balance =
+          :sys.get_state(pid).balance
+          |> convert_by_currency(currency)
 
         {:ok, converted_balance}
+
       {_, _} ->
         {:error, :user_does_not_exist}
     end
   end
 
-  @spec send(from_user :: String.t, to_user :: String.t, amount :: number, currency :: String.t) :: {:ok, from_user_balance :: number, to_user_balance :: number} | {:error, :wrong_arguments | :not_enough_money | :sender_does_not_exist | :receiver_does_not_exist | :too_many_requests_to_sender | :too_many_requests_to_receiver}
-  def send(from_user, to_user, amount, currency) do
-    withdraw(from_user, amount, currency)
-    deposit(to_user, amount, currency)
+  @spec send(
+          from_user :: String.t(),
+          to_user :: String.t(),
+          amount :: number,
+          currency :: String.t()
+        ) ::
+          {:ok, from_user_balance :: number, to_user_balance :: number}
+          | {:error,
+             :wrong_arguments
+             | :not_enough_money
+             | :sender_does_not_exist
+             | :receiver_does_not_exist
+             | :too_many_requests_to_sender
+             | :too_many_requests_to_receiver}
+  def send(from_user, to_user, amount, currency)
+      when is_binary(from_user) and is_binary(to_user) and is_number(amount) and
+             is_binary(currency) do
+    case {enough_in_balance?(from_user, amount, currency),
+          enough_in_balance?(to_user, amount, currency)} do
+      {true, true} ->
+        withdraw(from_user, amount, currency)
+        deposit(to_user, amount, currency)
+
+      {false, _} ->
+        {:error, :not_enough_money}
+
+      {_, false} ->
+        {:error, :not_enough_money}
+    end
   end
+
+  def send(_, _, _), do: {:error, :wrong_arguments}
 
   ## GenServer Callbacks
 
@@ -110,11 +159,12 @@ defmodule Bank do
 
   @impl true
   def handle_call({:create_user, id}, _from, _) do
-    {:reply, :user_created, %Bank{
-      balance: @default_balance,
-      default_currency: @default_currency,
-      id: id
-    }}
+    {:reply, :user_created,
+     %Bank{
+       balance: @default_balance,
+       default_currency: @default_currency,
+       id: id
+     }}
   end
 
   ## Private Functions
@@ -144,6 +194,5 @@ end
 # Via tuple - Registry
 # Might want to add tests
 # Monitors
-
 
 # https://akoutmos.com/post/rate-limiting-with-genservers/#:~:text=right%20into%20things!-,What%20is%20a%20rate%20limiter%3F,a%20given%201%20minute%20window.
