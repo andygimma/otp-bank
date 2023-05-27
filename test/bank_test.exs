@@ -58,6 +58,12 @@ defmodule BankTest do
       assert {:error, :user_does_not_exist} = Bank.deposit user_2, 10, @default_currency
     end
 
+    test "deposit/3 handles bad params" do
+      Bank.Server.start
+      assert {:error, :wrong_arguments} = Bank.deposit 12345, "10", 54321
+    end
+
+
     test "withdraw/3 has the correct return value" do
       user = generate_user_name()
       {:ok, _pid} = Bank.create_user user
@@ -80,6 +86,11 @@ defmodule BankTest do
       assert {:error, :user_does_not_exist} = Bank.withdraw user_2, 10, @default_currency
     end
 
+    test "withdraw/3 handles bad params" do
+      Bank.Server.start
+      assert {:error, :wrong_arguments} = Bank.withdraw 12345, "10", 54321
+    end
+
     test "get_balance/2 has the correct return value" do
       user = generate_user_name()
       {:ok, _pid} = Bank.create_user user
@@ -93,6 +104,11 @@ defmodule BankTest do
 
       {:ok, _pid} = Bank.create_user user_1
       assert {:error, :user_does_not_exist} = Bank.get_balance user_2, @default_currency
+    end
+
+    test "get_balance/2 handles bad params" do
+      Bank.Server.start
+      assert {:error, :wrong_arguments} = Bank.get_balance 12345, 54321
     end
 
   end

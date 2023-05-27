@@ -63,7 +63,7 @@ defmodule Bank do
              | :user_does_not_exist
              | :not_enough_money
              | :too_many_requests_to_user}
-  def withdraw(user, amount, currency) do
+  def withdraw(user, amount, currency) when is_binary(user) and is_number(amount) and is_binary(currency) do
     cond do
       !!too_many_requests?() -> {:error, :too_many_requests_to_user}
       !user_exists?(user) -> {:error, :user_does_not_exist}
@@ -75,10 +75,12 @@ defmodule Bank do
     end
   end
 
+  def withdraw(_, _, _), do: {:error, :wrong_arguments}
+
   @spec get_balance(user :: String.t(), currency :: String.t()) ::
           {:ok, balance :: number}
           | {:error, :wrong_arguments | :user_does_not_exist | :too_many_requests_to_user}
-  def get_balance(user, currency) do
+  def get_balance(user, currency) when is_binary(user) and is_binary(currency) do
     cond do
       !!too_many_requests?() -> {:error, :too_many_requests_to_user}
       !user_exists?(user) -> {:error, :user_does_not_exist}
@@ -92,6 +94,8 @@ defmodule Bank do
         {:ok, converted_balance}
     end
   end
+
+  def get_balance(_, _), do: {:error, :wrong_arguments}
 
   @spec send(
           from_user :: String.t(),
