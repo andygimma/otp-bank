@@ -124,11 +124,6 @@ defmodule BankTest do
       assert {:error, :wrong_arguments} = Bank.get_balance 12345, 54321
     end
 
-    test "send/4 handles bad params" do
-      Bank.Server.start
-      assert {:error, :wrong_arguments} = Bank.send 1, 2, 3, 4
-    end
-
     test "send/4 has the correct return value" do
       user_1 = generate_user_name()
       user_2 = generate_user_name()
@@ -173,6 +168,10 @@ defmodule BankTest do
       assert {:error, :receiver_does_not_exist} = Bank.send user_2, "SOME USER", 20, @default_currency
     end
 
+    test "send/4 handles bad params" do
+      Bank.Server.start
+      assert {:error, :wrong_arguments} = Bank.send 1, 2, 3, 4
+    end
   end
 
   defp generate_user_name() do
