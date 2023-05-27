@@ -31,6 +31,20 @@ defmodule BankTest do
       Bank.withdraw user, 5, @default_currency
       assert %{balance: 5.0, default_currency: @default_currency, id: nil} = :sys.get_state pid
     end
+
+    test "send/4 returns the expected states" do
+      user_1 = generate_user_name()
+      user_2 = generate_user_name()
+
+      {:ok, pid_1} = Bank.create_user user_1
+      {:ok, pid_2} = Bank.create_user user_2
+
+      Bank.deposit user_1, 10, @default_currency
+      a = Bank.send user_1, user_2, 2, @default_currency
+      assert %{balance: 8.0, default_currency: @default_currency, id: nil} = :sys.get_state pid_1
+      assert %{balance: 2.0, default_currency: @default_currency, id: nil} = :sys.get_state pid_2
+
+    end
   end
 
   describe "Public API" do

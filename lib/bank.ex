@@ -114,23 +114,19 @@ defmodule Bank do
   def send(from_user, to_user, amount, currency)
       when is_binary(from_user) and is_binary(to_user) and is_number(amount) and
              is_binary(currency) do
-    case {enough_in_balance?(from_user, amount, currency),
-          enough_in_balance?(to_user, amount, currency), user_exists?(from_user),
+    case {enough_in_balance?(from_user, amount, currency), user_exists?(from_user),
           user_exists?(to_user)} do
-      {_, _, false, _} ->
+      {_, false, _} ->
         {:error, :sender_does_not_exist}
 
-      {_, _, _, false} ->
+      {_, _, false} ->
         {:error, :sender_does_not_exist}
 
-      {true, true, _, _} ->
+      {true, _, _} ->
         withdraw(from_user, amount, currency)
         deposit(to_user, amount, currency)
 
-      {false, _, _, _} ->
-        {:error, :not_enough_money}
-
-      {_, false, _, _} ->
+      {false, _, _} ->
         {:error, :not_enough_money}
     end
   end
