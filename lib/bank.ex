@@ -135,7 +135,7 @@ defmodule Bank do
     end
   end
 
-  def send(_, _, _), do: {:error, :wrong_arguments}
+  def send(_, _, _, _), do: {:error, :wrong_arguments}
 
   ## GenServer Callbacks
 
