@@ -144,11 +144,33 @@ defmodule BankTest do
       user_1 = generate_user_name()
       user_2 = generate_user_name()
 
-      {:ok, pid_1} = Bank.create_user user_1
-      {:ok, pid_2} = Bank.create_user user_2
+      Bank.create_user user_1
+      Bank.create_user user_2
 
       Bank.deposit user_1, 10, @default_currency
       assert {:error, :not_enough_money} = Bank.send user_1, user_2, 20, @default_currency
+    end
+
+    test "send/4 sender does not exist" do
+      user_1 = generate_user_name()
+      user_2 = generate_user_name()
+
+      Bank.create_user user_1
+      Bank.create_user user_2
+
+      Bank.deposit user_1, 10, @default_currency
+      assert {:error, :sender_does_not_exist} = Bank.send "SOME USER", user_2, 20, @default_currency
+    end
+
+    test "send/4 receiver does not exist" do
+      user_1 = generate_user_name()
+      user_2 = generate_user_name()
+
+      Bank.create_user user_1
+      Bank.create_user user_2
+
+      Bank.deposit user_1, 10, @default_currency
+      assert {:error, :receiver_does_not_exist} = Bank.send user_2, "SOME USER", 20, @default_currency
     end
 
   end
