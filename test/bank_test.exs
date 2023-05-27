@@ -41,6 +41,14 @@ defmodule BankTest do
       {:ok, _pid} = Bank.create_user user
       assert {:ok, 10.0} = Bank.deposit user, 10, @default_currency
     end
+
+    test "deposit/3 when the user does not exist" do
+      user_1 = generate_user_name()
+      user_2 = generate_user_name()
+
+      {:ok, _pid} = Bank.create_user user_1
+      assert {:error, :user_does_not_exist} = Bank.deposit user_2, 10, @default_currency
+    end
   end
 
   defp generate_user_name() do
