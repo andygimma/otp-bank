@@ -79,11 +79,10 @@ defmodule Bank do
           {:ok, balance :: number}
           | {:error, :wrong_arguments | :user_does_not_exist | :too_many_requests_to_user}
   def get_balance(user, currency) do
-    case {user_exists?(user), too_many_requests?()} do
-      {_, true} ->
-        {:error, :too_many_requests_to_user}
-
-      {true, false} ->
+    cond do
+      !!too_many_requests?() -> {:error, :too_many_requests_to_user}
+      !user_exists?(user) -> {:error, :user_does_not_exist}
+      true ->
         [{pid, _}] = Registry.lookup(:bank_registry, user)
 
         converted_balance =
@@ -91,9 +90,6 @@ defmodule Bank do
           |> convert_by_currency(currency)
 
         {:ok, converted_balance}
-
-      {_, _} ->
-        {:error, :user_does_not_exist}
     end
   end
 
