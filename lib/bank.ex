@@ -125,6 +125,10 @@ defmodule Bank do
       {true, _, _} ->
         withdraw(from_user, amount, currency)
         deposit(to_user, amount, currency)
+        {:ok, balance_1} = Bank.get_balance from_user, "USD"
+        {:ok, balance_2} = Bank.get_balance to_user, "USD"
+
+        {:ok, balance_1, balance_2}
 
       {false, _, _} ->
         {:error, :not_enough_money}

@@ -40,10 +40,9 @@ defmodule BankTest do
       {:ok, pid_2} = Bank.create_user user_2
 
       Bank.deposit user_1, 10, @default_currency
-      a = Bank.send user_1, user_2, 2, @default_currency
+      Bank.send user_1, user_2, 2, @default_currency
       assert %{balance: 8.0, default_currency: @default_currency, id: nil} = :sys.get_state pid_1
       assert %{balance: 2.0, default_currency: @default_currency, id: nil} = :sys.get_state pid_2
-
     end
   end
 
@@ -128,6 +127,17 @@ defmodule BankTest do
     test "send/4 handles bad params" do
       Bank.Server.start
       assert {:error, :wrong_arguments} = Bank.send 1, 2, 3, 4
+    end
+
+    test "send/4 has the correct return value" do
+      user_1 = generate_user_name()
+      user_2 = generate_user_name()
+
+      {:ok, _pid_1} = Bank.create_user user_1
+      {:ok, _pid_2} = Bank.create_user user_2
+
+      Bank.deposit user_1, 10, @default_currency
+      assert {:ok, 8.0, 2.0} = Bank.send user_1, user_2, 2, @default_currency
     end
 
   end
