@@ -19,6 +19,10 @@ defmodule Bank do
     GenServer.start_link(__MODULE__, name, name: via_tuple(name))
   end
 
+  def stop(process_name, stop_reason) do
+    process_name |> via_tuple() |> GenServer.stop(stop_reason)
+  end
+
   def child_spec(process_name) do
     %{
       id: __MODULE__,
