@@ -45,7 +45,7 @@ defmodule Bank do
       when is_binary(user) and is_number(amount) and is_binary(currency) and is_binary(user) do
 
     cond do
-      # TODO: too_many_requests?() -> {:  error, :too_many_requests_to_user}
+      !!too_many_requests?() -> {:error, :too_many_requests_to_user}
       !user_exists?(user) -> {:error, :user_does_not_exist}
       true ->
         user |> via_tuple() |> GenServer.call({:deposit, user, amount, currency})
@@ -65,7 +65,7 @@ defmodule Bank do
              | :too_many_requests_to_user}
   def withdraw(user, amount, currency) do
     cond do
-      # TODO: too_many_requests?() -> {:  error, :too_many_requests_to_user}
+      !!too_many_requests?() -> {:error, :too_many_requests_to_user}
       !user_exists?(user) -> {:error, :user_does_not_exist}
       !enough_in_balance?(user, amount, currency) -> {:error, :not_enough_money}
       true ->
