@@ -77,8 +77,22 @@ defmodule BankTest do
       user_2 = generate_user_name()
 
       {:ok, _pid} = Bank.create_user user_1
-      a = Bank.withdraw user_2, 10, @default_currency
-      IO.inspect a, label: "AAA"
+      assert {:error, :user_does_not_exist} = Bank.withdraw user_2, 10, @default_currency
+    end
+
+    test "get_balance/2 has the correct return value" do
+      user = generate_user_name()
+      {:ok, _pid} = Bank.create_user user
+      Bank.deposit user, 10, @default_currency
+      assert {:ok, 10.0} = Bank.get_balance user, @default_currency
+    end
+
+    test "get_balance/2 when the user does not exist" do
+      user_1 = generate_user_name()
+      user_2 = generate_user_name()
+
+      {:ok, _pid} = Bank.create_user user_1
+      assert {:error, :user_does_not_exist} = Bank.get_balance user_2, @default_currency
     end
 
   end
