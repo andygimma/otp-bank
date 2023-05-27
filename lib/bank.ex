@@ -116,9 +116,10 @@ defmodule Bank do
              is_binary(currency) do
 
       cond do
-        # !!too_many_requests?() -> {:error, :too_many_requests_to_user}
         !user_exists?(from_user) -> {:error, :sender_does_not_exist}
         !user_exists?(to_user) -> {:error, :receiver_does_not_exist}
+        !!too_many_requests?(from_user) -> {:error, :too_many_requests_to_receiver}
+        !!too_many_requests?(to_user) -> {:error, :too_many_requests_to_sender}
         !enough_in_balance?(from_user, amount, currency) -> {:error, :not_enough_money}
         true ->
           withdraw(from_user, amount, currency)
