@@ -45,8 +45,8 @@ defmodule Bank do
       when is_binary(user) and is_number(amount) and is_binary(currency) and is_binary(user) do
 
     cond do
-      !!too_many_requests?() -> {:error, :too_many_requests_to_user}
       !user_exists?(user) -> {:error, :user_does_not_exist}
+      !!too_many_requests?(user) -> {:error, :too_many_requests_to_user}
       true ->
         user |> via_tuple() |> GenServer.call({:deposit, user, amount, currency})
         [{pid, _}] = Registry.lookup(:bank_registry, user)
@@ -65,8 +65,8 @@ defmodule Bank do
              | :too_many_requests_to_user}
   def withdraw(user, amount, currency) when is_binary(user) and is_number(amount) and is_binary(currency) do
     cond do
-      !!too_many_requests?() -> {:error, :too_many_requests_to_user}
       !user_exists?(user) -> {:error, :user_does_not_exist}
+      !!too_many_requests?(user) -> {:error, :too_many_requests_to_user}
       !enough_in_balance?(user, amount, currency) -> {:error, :not_enough_money}
       true ->
         user |> via_tuple() |> GenServer.call({:withdraw, user, amount, currency})
@@ -82,8 +82,8 @@ defmodule Bank do
           | {:error, :wrong_arguments | :user_does_not_exist | :too_many_requests_to_user}
   def get_balance(user, currency) when is_binary(user) and is_binary(currency) do
     cond do
-      !!too_many_requests?() -> {:error, :too_many_requests_to_user}
       !user_exists?(user) -> {:error, :user_does_not_exist}
+      !!too_many_requests?(user) -> {:error, :too_many_requests_to_user}
       true ->
         [{pid, _}] = Registry.lookup(:bank_registry, user)
 
@@ -177,8 +177,9 @@ defmodule Bank do
     balance >= amount
   end
 
-  defp too_many_requests?() do
-    Process.info(self(), :message_queue_len) <= 10
+  defp too_many_requests?(user) do
+    [{pid, nil}] = Registry.lookup(:bank_registry, user)
+    Process.info(pid, :message_queue_len) <= 10
   end
 
   defp user_exists?(user) do
