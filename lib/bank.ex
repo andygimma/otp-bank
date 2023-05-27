@@ -190,11 +190,3 @@ defmodule Bank do
     Registry.lookup(:bank_registry, user) != []
   end
 end
-
-# Unhandled messages
-# Robert Virding - Erlang
-# Via tuple - Registry
-# Might want to add tests
-# Monitors
-
-# https://akoutmos.com/post/rate-limiting-with-genservers/#:~:text=right%20into%20things!-,What%20is%20a%20rate%20limiter%3F,a%20given%201%20minute%20window.
